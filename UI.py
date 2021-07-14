@@ -1,12 +1,16 @@
+import pandas as pd
+import tkinter
 import tkinter.ttk as ttk
 from tkinter import*
+from tkinter import filedialog
+
 
 # Tool 창 설정
 tool = Tk()
 tool.title("보충보급 관리 프로그램")
 tool.geometry("450x350+600+300")    # 가로 * 세로 + x좌표 + y좌표
 tool.resizable(False, False)    # 높이, 너비 값 변경 불가
-#tool.iconphoto(False, PhotoImage(file='C:/Users/User/PycharmProjects/GUI/icon.gif'))
+tool.iconphoto(False, PhotoImage(file='icon.gif'))
 
 
 # 정보 입력
@@ -36,11 +40,18 @@ monthbox.pack(side="right", padx=3, pady=5)
 
 # 파일 선택
 def select_file():
-    files = filedialog.askopenfile(title="파일을 선택하세요", \
+    files = filedialog.askopenfilename(title="파일을 선택하세요", \
                                    filetypes=(("Excel 파일", "*.xlsx"), \
                                               ("모든 파일", "*.*")), \
                                    initialdir="C:/")    # 최초에 C:/ 경로를 보여줌
-    print(files)
+    df = pd.read_excel(files)
+    df2 = pd.DataFrame()
+    df2['group'] = df['Unnamed: 0']
+    df2['num'] = df['Unnamed: 26']
+    df2['name'] = df['Unnamed: 33']
+    df3 = df2.dropna(how='any')
+    print(df3)
+
 
 
 # 최초 인사 명령 결과 버튼
