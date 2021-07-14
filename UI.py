@@ -1,9 +1,9 @@
 import pandas as pd
-import tkinter
 import tkinter.ttk as ttk
-from tkinter import*
+import tkinter
+from tkinter import *
 from tkinter import filedialog
-
+from openpyxl import load_workbook
 
 # Tool 창 설정
 tool = Tk()
@@ -37,35 +37,56 @@ monthbox = ttk.Combobox(dateframe, width=8, height=12, values=months, state="rea
 monthbox.current(0)
 monthbox.pack(side="right", padx=3, pady=5)
 
+def msgbox(title, info):
+    tkinter.messagebox.showinfo(title, info)
+def errorbox(title, info):
+    tkinter.messagebox.showerror(title, info)
 
-# 파일 선택
-def select_file():
-    files = filedialog.askopenfilename(title="파일을 선택하세요", \
-                                   filetypes=(("Excel 파일", "*.xlsx"), \
-                                              ("모든 파일", "*.*")), \
-                                   initialdir="C:/")    # 최초에 C:/ 경로를 보여줌
-    df = pd.read_excel(files)
-    df2 = pd.DataFrame()
-    df2['group'] = df['Unnamed: 0']
-    df2['num'] = df['Unnamed: 26']
-    df2['name'] = df['Unnamed: 33']
-    df3 = df2.dropna(how='any')
-    print(df3)
+def HR_result():
 
+    # 파일 선택
+    def select_file():
+        files = filedialog.askopenfilename(title="파일을 선택하세요", \
+                                           filetypes=(("Excel 파일", "*.xlsx"), \
+                                                      ("모든 파일", "*.*")), \
+                                           initialdir="./")    # 현재 경로를 보여줌
+        df = pd.read_excel(files)
+        df2 = pd.DataFrame()
+        df2['부대'] = df['Unnamed: 0']
+        df2['군번'] = df['Unnamed: 26']
+        df2['이름'] = df['Unnamed: 33']
+        df3 = df2.dropna(how='any')
+        return df3
+
+    def save_data(df):
+        year = yearbox.get()
+        month = monthbox.get()
+
+        writer = pd.ExcelWriter('member_info.xlsx', mode='a')
+        df.to_excel(writer, sheet_name=year+month, index=False)
+        writer.save()
+
+    try:
+        save_data(select_file())
+        msgbox("인사 명령 결과", "완료되었습니다.")
+    except PermissionError:
+        errorbox("Permission Error", "접근 권한이 없습니다. \n 파일을 닫고 다시 진행해주십시오.")
+    except AssertionError:
+        errorbox("Assertion Error", "파일 선택이 취소되었습니다.")
 
 
 # 최초 인사 명령 결과 버튼
-btn1 = Button(dataframe, width=20, height=2, text="최초 인사 명령 결과", font="맑은고딕 12", command=select_file)
+btn1 = Button(dataframe, width=20, height=2, text="최초 인사 명령 결과", font="맑은고딕 12", command=HR_result)
 btn1.grid(row=0, column=1, padx=10, pady=5)
 
 
 # 피복 사이즈 정보 버튼
-btn2 = Button(dataframe, width=20, height=2, text="피복 사이즈 정보", font="맑은고딕 12", command=select_file)
+btn2 = Button(dataframe, width=20, height=2, text="피복 사이즈 정보", font="맑은고딕 12")
 btn2.grid(row=1, column=0, padx=10, pady=5)
 
 
 # 최종 부대 분류 결과 버튼
-btn3 = Button(dataframe, width=20, height=2, text="최종 부대 분류 결과", font="맑은고딕 12", command=select_file)
+btn3 = Button(dataframe, width=20, height=2, text="최종 부대 분류 결과", font="맑은고딕 12")
 btn3.grid(row=1, column=1, padx=10, pady=5)
 
 
