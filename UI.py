@@ -5,6 +5,7 @@ import tkinter.messagebox
 from tkinter import *
 from tkinter import filedialog
 from openpyxl import load_workbook
+import re
 
 # Tool 창 설정
 tool = Tk()
@@ -52,12 +53,22 @@ def HR_result():
                                                       ("모든 파일", "*.*")), \
                                            initialdir="./")    # 현재 경로를 보여줌
         df = pd.read_excel(files)
+
+        unit_nums = [re.compile('^(.*) 부 \(이상(.*)명\)$') \
+                       .findall(string.strip())
+                     for string in df['Unnamed: 6'].dropna(how='any')]
+
+        units = []
+        for unit_num in unit_nums:
+            unit, num = unit_num[0]
+            units += [unit] * int(num)
+
         df2 = pd.DataFrame()
-        df2['부대'] = df['Unnamed: 0']
         df2['군번'] = df['Unnamed: 26']
         df2['이름'] = df['Unnamed: 33']
         df3 = df2.dropna(how='any')
-        return df3
+        df3['부대'] = units
+        return df3[['부대', '군번', '이름']]
 
     def save_data(df):
         year = yearbox.get()
