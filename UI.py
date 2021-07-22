@@ -6,6 +6,7 @@ from tkinter import *
 from tkinter import filedialog
 from openpyxl import load_workbook
 import re
+from pandastable import Table
 
 # Tool 창 설정
 tool = Tk()
@@ -102,20 +103,29 @@ btn3 = Button(dataframe, width=20, height=2, text="최종 부대 분류 결과",
 btn3.grid(row=1, column=1, padx=10, pady=5)
 
 
-# 결과 조회
-def show_data():
-    data = Tk()
-    data.title("결과 조회")
-    data.mainloop()
+# 부대별 인원 조회
+def show_unitdata():
+    unit_data = Tk()
+    unit_data.title("부대별 조회")
+    frame = tkinter.Frame(unit_data)
+    frame.pack(fill='both', expand=True)
+    df = pd.read_excel('member_info.xlsx', sheet_name=None)
+    unit_total = pd.DataFrame(columns=['부대'])
+    for k in df.keys():
+        unit_df = df[k]['부대'].value_counts(sort=False).convert_dtypes().rename_axis('부대').reset_index(name=k)
+        unit_total = pd.merge(unit_total,unit_df, how='outer', on='부대')
+    unit_table = Table(frame, dataframe=unit_total)
+    unit_table.show()
+    unit_data.mainloop()
 
 
 # 품목별 조회 버튼
-btn4 = Button(resultframe, width=20, height=2, text="품목별 조회", font="맑은고딕 12", command=show_data)
+btn4 = Button(resultframe, width=20, height=2, text="품목별 조회", font="맑은고딕 12")
 btn4.grid(row=0, column=0, padx=10, pady=5)
 
 
 # 부대별 조회 버튼
-btn5 = Button(resultframe, width=20, height=2, text="부대별 조회", font="맑은고딕 12", command=show_data)
+btn5 = Button(resultframe, width=20, height=2, text="부대별 조회", font="맑은고딕 12", command=show_unitdata)
 btn5.grid(row=0, column=1, padx=10, pady=5)
 
 tool.mainloop()
