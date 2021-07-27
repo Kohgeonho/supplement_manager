@@ -102,20 +102,64 @@ btn2.grid(row=1, column=0, padx=10, pady=5)
 btn3 = Button(dataframe, width=20, height=2, text="최종 부대 분류 결과", font="맑은고딕 12")
 btn3.grid(row=1, column=1, padx=10, pady=5)
 
-
 # 부대별 인원 조회
+
+class MyTable(Table):
+    """Custom table class inherits from Table. You can then override required methods"""
+    def __init__(self, parent=None, **kwargs):
+        Table.__init__(self, parent, **kwargs)
+        return
+
+    def show_specific(self, col, value):
+        w = Toplevel(self.parentframe)
+        w.title("New Window")
+        w.geometry("600x400+200+100")
+        
+        f = Frame(w)
+        f.pack(fill=BOTH,expand=1)
+
+        xl = pd.ExcelFile('member_info.xlsx')
+        sheet = xl.sheet_names[col-1]
+        df = pd.read_excel('member_info.xlsx', sheet_name=sheet)
+        df = df[df['부대'] == value]
+
+        pt = MyTable(f, dataframe=df,
+                     showtoolbar=True, showstatusbar=True)
+        pt.show()
+        return
+
+    def popupMenu(self, event, rows=None, cols=None, outside=None):
+        popupmenu = Menu(self, tearoff = 0)
+        def popupFocusOut(event):
+            popupmenu.unpost()
+
+        row = self.get_row_clicked(event)
+        col = self.get_col_clicked(event)
+        value = self.model.getValueAt(row, 0)
+
+        popupmenu.add_command(label="자세히", command= lambda: self.show_specific(col, value))
+
+        popupmenu.bind("<FocusOut>", popupFocusOut)
+        popupmenu.focus_set()
+        popupmenu.post(event.x_root, event.y_root)
+        return popupmenu
+
 def show_unitdata():
-    unit_data = Tk()
-    unit_data.title("부대별 조회")
-    frame = tkinter.Frame(unit_data)
-    frame.pack(fill='both', expand=True)
+
+    unit_data = Toplevel(tool)
+    unit_data.title("Unit Data")
+    unit_data.geometry("600x400+200+100")
+    
+    f = Frame(unit_data)
+    f.pack(fill=BOTH,expand=1)
+
     df = pd.read_excel('member_info.xlsx', sheet_name=None)
     unit_total = pd.DataFrame(columns=['부대'])
     for k in df.keys():
         unit_df = df[k]['부대'].value_counts(sort=False).convert_dtypes().rename_axis('부대').reset_index(name=k)
         unit_total = pd.merge(unit_total,unit_df, how='outer', on='부대')
-    unit_table = Table(frame, dataframe=unit_total)
-    unit_table.show()
+    pt = MyTable(f, dataframe=unit_total)
+    pt.show()
     unit_data.mainloop()
 
 
