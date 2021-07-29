@@ -13,7 +13,7 @@ tool = Tk()
 tool.title("보충보급 관리 프로그램")
 tool.geometry("450x350+600+300")    # 가로 * 세로 + x좌표 + y좌표
 tool.resizable(False, False)    # 높이, 너비 값 변경 불가
-tool.iconphoto(False, PhotoImage(file='icon.gif'))
+tool.iconphoto(True, PhotoImage(file='icon.gif'))
 
 
 # 정보 입력
@@ -112,7 +112,6 @@ class MyTable(Table):
 
     def show_specific(self, col, value):
         w = Toplevel(self.parentframe)
-        w.title("New Window")
         w.geometry("600x400+200+100")
         
         f = Frame(w)
@@ -122,9 +121,9 @@ class MyTable(Table):
         sheet = xl.sheet_names[col-1]
         df = pd.read_excel('member_info.xlsx', sheet_name=sheet)
         df = df[df['부대'] == value]
+        w.title(value + " / " + sheet)
 
-        pt = MyTable(f, dataframe=df,
-                     showtoolbar=True, showstatusbar=True)
+        pt = MyTable(f, dataframe=df)
         pt.show()
         return
 
@@ -147,9 +146,9 @@ class MyTable(Table):
 def show_unitdata():
 
     unit_data = Toplevel(tool)
-    unit_data.title("Unit Data")
+    unit_data.title("부대 전체 조회")
     unit_data.geometry("600x400+200+100")
-    
+        
     f = Frame(unit_data)
     f.pack(fill=BOTH,expand=1)
 
