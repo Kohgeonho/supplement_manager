@@ -68,7 +68,9 @@ def HR_result():
         df2['군번'] = df['Unnamed: 26']
         df2['이름'] = df['Unnamed: 33']
         df3 = df2.dropna(how='any')
-        df3['부대'] = units
+        
+        unattached = len(df3) - len(units)
+        df3['부대'] = units + ['소속없음'] * unattached
         return df3[['부대', '군번', '이름']]
 
     def save_data(df):
