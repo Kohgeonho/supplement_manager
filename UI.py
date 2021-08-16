@@ -44,13 +44,16 @@ def msgbox(title, info):
     tkinter.messagebox.showinfo(title, info)
 def errorbox(title, info):
     tkinter.messagebox.showerror(title, info)
+def questionbox(title, info):
+    return tkinter.messagebox.askokcancel(title, info)
 
 def HR_result():
 
     # 파일 선택
     def select_file():
         files = filedialog.askopenfilename(title="파일을 선택하세요", \
-                                           filetypes=(("Excel 파일", "*.xlsx"), \
+                                           filetypes=(("Excel 파일", "*.xls*"), \
+                                                      ("Cell 파일", "*.cell"), \
                                                       ("모든 파일", "*.*")), \
                                            initialdir="./")    # 현재 경로를 보여줌
         df = pd.read_excel(files)
@@ -77,32 +80,85 @@ def HR_result():
         year = yearbox.get()
         month = monthbox.get()
 
-        writer = pd.ExcelWriter('member_info.xlsx', mode='a')
-        df.to_excel(writer, sheet_name=year+month, index=False)
-        writer.save()
+        wb = load_workbook('member_info.xlsx')
+        overwrite = True
+        if year+month in wb.sheetnames:
+            overwrite = questionbox("중복된 시트", f"{year+month}에 해당하는 정보가 이미 존재합니다. 대치하시겠습니까?")
+
+        if overwrite == True:
+            writer = pd.ExcelWriter('member_info.xlsx', mode='a', if_sheet_exists='replace')
+            df.to_excel(writer, sheet_name=year+month, index=False)
+            writer.save()
+            msgbox("인사 명령 결과", "완료되었습니다.")
 
     try:
         save_data(select_file())
-        msgbox("인사 명령 결과", "완료되었습니다.")
     except PermissionError:
         errorbox("Permission Error", "접근 권한이 없습니다. \n 파일을 닫고 다시 진행해주십시오.")
-    except AssertionError:
-        errorbox("Assertion Error", "파일 선택이 취소되었습니다.")
+    except FileNotFoundError:
+        errorbox("File Not Found Error", "파일 선택이 취소되었습니다.")
 
 
 # 최초 인사 명령 결과 버튼
 btn1 = Button(dataframe, width=20, height=2, text="최초 인사 명령 결과", font="맑은고딕 12", command=HR_result)
 btn1.grid(row=0, column=1, padx=10, pady=5)
 
+# 피복 사이즈 정보
+def sizeInfo():
+    wb = load_workbook('member_info.xlsx')
+    sheets = wb.sheetnames
+
+    try:
+        files = filedialog.askopenfilename(title="파일을 선택하세요", \
+                                        filetypes=(("Excel 파일", "*.xls*"), \
+                                                    ("Cell 파일", "*.cell"), \
+                                                    ("모든 파일", "*.*")), \
+                                        initialdir="./")    # 현재 경로를 보여줌
+        size_info = pd.read_excel(files, header=3)
+
+        for sheet in sheets:
+            member = pd.read_excel('member_info.xlsx', sheet_name=sheet)
+
+            joined = member.set_index('군번') \
+                           .join(size_info[['군번', '런닝', '팬티', '슬리퍼']].set_index('군번'), on='군번')
+            writer = pd.ExcelWriter('member_info.xlsx', mode='a', if_sheet_exists='replace')
+            joined.to_excel(writer, sheet_name=sheet, index=True)
+            writer.save()
+            
+        msgbox("피복 사이즈 정보", "완료되었습니다.")
+
+    except PermissionError:
+        errorbox("Permission Error", "접근 권한이 없습니다. \n 파일을 닫고 다시 진행해주십시오.")
+    except FileNotFoundError:
+        errorbox("File Not Found Error", "파일 선택이 취소되었습니다.")
+
 
 # 피복 사이즈 정보 버튼
-btn2 = Button(dataframe, width=20, height=2, text="피복 사이즈 정보", font="맑은고딕 12")
+btn2 = Button(dataframe, width=20, height=2, text="피복 사이즈 정보", font="맑은고딕 12", command=sizeInfo)
 btn2.grid(row=1, column=0, padx=10, pady=5)
 
 
 # 최종 부대 분류 결과 버튼
 btn3 = Button(dataframe, width=20, height=2, text="최종 부대 분류 결과", font="맑은고딕 12")
 btn3.grid(row=1, column=1, padx=10, pady=5)
+
+# 품목별 인원 조회
+def show_itemdata():
+    item_data = Toplevel(tool)
+    item_data.title("품목 전체 조회")
+    item_data.geometry("600x400+200+100")
+        
+    f = Frame(item_data)
+    f.pack(fill=BOTH,expand=1)
+
+    df = pd.read_excel('member_info.xlsx', sheet_name=None)
+    unit_total = pd.DataFrame(columns=['부대'])
+    for month in df.keys():
+        unit_df = df[month]['부대'].value_counts(sort=False).convert_dtypes().rename_axis('부대').reset_index(name=k)
+        unit_total = pd.merge(unit_total,unit_df, how='outer', on='부대')
+    pt = MyTable(f, dataframe=unit_total)
+    pt.show()
+    item_data.mainloop()
 
 # 부대별 인원 조회
 
