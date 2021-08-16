@@ -152,11 +152,32 @@ def show_itemdata():
     f.pack(fill=BOTH,expand=1)
 
     df = pd.read_excel('member_info.xlsx', sheet_name=None)
-    unit_total = pd.DataFrame(columns=['부대'])
-    for month in df.keys():
-        unit_df = df[month]['부대'].value_counts(sort=False).convert_dtypes().rename_axis('부대').reset_index(name=k)
-        unit_total = pd.merge(unit_total,unit_df, how='outer', on='부대')
-    pt = MyTable(f, dataframe=unit_total)
+    items = {'런닝': lambda x:int(x[1:]), 
+            '팬티': lambda x:int(x[1:]), 
+            '슬리퍼': lambda x:int(x)}
+    unit_total = {}
+
+    for item in items:
+        unit_total[item] = pd.DataFrame(columns=['품목', '사이즈'])
+
+        for month in df.keys():
+            unit_df = df[month][item].value_counts(sort=False) \
+                                     .convert_dtypes() \
+                                     .rename_axis('사이즈') \
+                                     .reset_index(name=month)
+            sort_value = unit_df['사이즈'].apply(items[item])
+            label = [item] * len(unit_df)
+
+            unit_df['품목'] = label
+            unit_df['sort'] = sort_value
+            unit_df = unit_df.sort_values(by='sort')
+
+            unit_total[item] = pd.merge(unit_total[item], 
+                                        unit_df[['품목', '사이즈', month]], 
+                                        how='outer', 
+                                        on=['품목', '사이즈'])
+
+    pt = Table(f, dataframe=pd.concat(unit_total))
     pt.show()
     item_data.mainloop()
 
@@ -181,7 +202,7 @@ class MyTable(Table):
         df = df[df['부대'] == value]
         w.title(value + " / " + sheet)
 
-        pt = MyTable(f, dataframe=df)
+        pt = Table(f, dataframe=df)
         pt.show()
         return
 
@@ -221,7 +242,7 @@ def show_unitdata():
 
 
 # 품목별 조회 버튼
-btn4 = Button(resultframe, width=20, height=2, text="품목별 조회", font="맑은고딕 12")
+btn4 = Button(resultframe, width=20, height=2, text="품목별 조회", font="맑은고딕 12", command=show_itemdata)
 btn4.grid(row=0, column=0, padx=10, pady=5)
 
 
