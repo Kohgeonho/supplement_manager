@@ -47,6 +47,8 @@ def errorbox(title, info):
 def questionbox(title, info):
     return tkinter.messagebox.askokcancel(title, info)
 
+
+# 최초 인사 명령 결과 추가
 def HR_result():
 
     # 파일 선택
@@ -56,26 +58,27 @@ def HR_result():
                                                       ("Cell 파일", "*.cell"), \
                                                       ("모든 파일", "*.*")), \
                                            initialdir="./")    # 현재 경로를 보여줌
-        df = pd.read_excel(files)
+        hr = pd.read_excel(files)
 
         unit_nums = [re.compile('^(.*) 부 \(이상(.*)명\)$') \
                        .findall(string.strip())
-                     for string in df['Unnamed: 6'].dropna(how='any')]
+                     for string in hr['Unnamed: 6'].dropna(how='any')]
 
         units = []
         for unit_num in unit_nums:
             unit, num = unit_num[0]
             units += [unit] * int(num)
 
-        df2 = pd.DataFrame()
-        df2['군번'] = df['Unnamed: 26']
-        df2['이름'] = df['Unnamed: 33']
-        df3 = df2.dropna(how='any')
+        df = pd.DataFrame()
+        df['군번'] = hr['Unnamed: 26']
+        df['이름'] = hr['Unnamed: 33']
+        hr_sliced = df.dropna(how='any')
         
-        unattached = len(df3) - len(units)
-        df3['부대'] = units + ['소속없음'] * unattached
-        return df3[['부대', '군번', '이름']]
+        unattached = len(hr_sliced) - len(units)
+        hr_sliced['부대'] = units + ['소속없음'] * unattached
+        return hr_sliced[['부대', '군번', '이름']]
 
+    # 인사 정보 엑셀 시트에 저장
     def save_data(df):
         year = yearbox.get()
         month = monthbox.get()
@@ -83,13 +86,13 @@ def HR_result():
         wb = load_workbook('member_info.xlsx')
         overwrite = True
         if year+month in wb.sheetnames:
-            overwrite = questionbox("중복된 시트", f"{year+month}에 해당하는 정보가 이미 존재합니다. 대치하시겠습니까?")
+            overwrite = questionbox("중복된 시트", f"{year+month}에 해당하는 정보가 이미 존재합니다. 바꾸시겠습니까?")
 
         if overwrite == True:
             writer = pd.ExcelWriter('member_info.xlsx', mode='a', if_sheet_exists='replace')
             df.to_excel(writer, sheet_name=year+month, index=False)
             writer.save()
-            msgbox("인사 명령 결과", "완료되었습니다.")
+            msgbox("최초 인사 명령 결과", "완료되었습니다.")
 
     try:
         save_data(select_file())
@@ -103,7 +106,8 @@ def HR_result():
 btn1 = Button(dataframe, width=20, height=2, text="최초 인사 명령 결과", font="맑은고딕 12", command=HR_result)
 btn1.grid(row=0, column=1, padx=10, pady=5)
 
-# 피복 사이즈 정보
+
+# 피복 사이즈 정보 추가
 def sizeInfo():
     wb = load_workbook('member_info.xlsx')
     sheets = wb.sheetnames
@@ -119,7 +123,7 @@ def sizeInfo():
         for sheet in sheets:
             member = pd.read_excel('member_info.xlsx', sheet_name=sheet)
 
-            joined = member.set_index('군번') \
+            joined = member[['군번', '이름', '부대']].set_index('군번') \
                            .join(size_info[['군번', '런닝', '팬티', '슬리퍼']].set_index('군번'), on='군번')
             writer = pd.ExcelWriter('member_info.xlsx', mode='a', if_sheet_exists='replace')
             joined.to_excel(writer, sheet_name=sheet, index=True)
@@ -142,10 +146,11 @@ btn2.grid(row=1, column=0, padx=10, pady=5)
 btn3 = Button(dataframe, width=20, height=2, text="최종 부대 분류 결과", font="맑은고딕 12")
 btn3.grid(row=1, column=1, padx=10, pady=5)
 
+
 # 품목별 인원 조회
 def show_itemdata():
     item_data = Toplevel(tool)
-    item_data.title("품목 전체 조회")
+    item_data.title("품목별 조회")
     item_data.geometry("600x400+200+100")
         
     f = Frame(item_data)
@@ -181,8 +186,8 @@ def show_itemdata():
     pt.show()
     item_data.mainloop()
 
-# 부대별 인원 조회
 
+# 부대별 인원 조회
 class MyTable(Table):
     """Custom table class inherits from Table. You can then override required methods"""
     def __init__(self, parent=None, **kwargs):
@@ -233,8 +238,8 @@ def show_unitdata():
 
     df = pd.read_excel('member_info.xlsx', sheet_name=None)
     unit_total = pd.DataFrame(columns=['부대'])
-    for k in df.keys():
-        unit_df = df[k]['부대'].value_counts(sort=False).convert_dtypes().rename_axis('부대').reset_index(name=k)
+    for month in df.keys():
+        unit_df = df[month]['부대'].value_counts(sort=False).convert_dtypes().rename_axis('부대').reset_index(name=month)
         unit_total = pd.merge(unit_total,unit_df, how='outer', on='부대')
     pt = MyTable(f, dataframe=unit_total)
     pt.show()
