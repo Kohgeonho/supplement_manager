@@ -123,8 +123,17 @@ def sizeInfo():
         for sheet in sheets:
             member = pd.read_excel('member_info.xlsx', sheet_name=sheet)
 
-            joined = member[['군번', '이름', '부대']].set_index('군번') \
-                           .join(size_info[['군번', '런닝', '팬티', '슬리퍼']].set_index('군번'), on='군번')
+            joined = member.set_index('군번') \
+                           .join(size_info[['군번', '런닝', '팬티', '슬리퍼']].set_index('군번'), on='군번', r_suffix='_new')
+
+            def is_null(x):
+                return x != x
+            for item in ['런닝', '팬티', '슬리퍼']:
+                size = [row[item] if is_null(row[item+'_new']) else row[item+'_new']
+                        for row in joined.iloc]
+                joined[item] = size.copy()
+            joined = joined['이름','부대','런닝','팬티','슬리퍼']
+
             writer = pd.ExcelWriter('member_info.xlsx', mode='a', if_sheet_exists='replace')
             joined.to_excel(writer, sheet_name=sheet, index=True)
             writer.save()
@@ -158,14 +167,18 @@ def show_itemdata():
 
     df = pd.read_excel('member_info.xlsx', sheet_name=None)
     items = {'런닝': lambda x:int(x[1:]), 
-            '팬티': lambda x:int(x[1:]), 
-            '슬리퍼': lambda x:int(x)}
+             '팬티': lambda x:int(x[1:]), 
+             '슬리퍼': lambda x:int(x)}
     unit_total = {}
 
     for item in items:
         unit_total[item] = pd.DataFrame(columns=['품목', '사이즈'])
 
         for month in df.keys():
+
+            if item not in df[month].columns:
+                continue
+
             unit_df = df[month][item].value_counts(sort=False) \
                                      .convert_dtypes() \
                                      .rename_axis('사이즈') \
