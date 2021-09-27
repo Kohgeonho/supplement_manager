@@ -1,0 +1,28 @@
+c:\Users\User\Desktop\과학기술병 김도형\supplement_manager\UI.py:79: SettingWithCopyWarning: 
+A value is trying to be set on a copy of a slice from a DataFrame.
+Try using .loc[row_indexer,col_indexer] = value instead
+
+See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
+  hr_sliced['부대'] = units + ['소속없음'] * unattached
+Exception in Tkinter callback
+Traceback (most recent call last):
+  File "C:\Python39\lib\site-packages\pandas\core\indexes\base.py", line 3361, in get_loc
+    return self._engine.get_loc(casted_key)
+  File "pandas\_libs\index.pyx", line 76, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas\_libs\index.pyx", line 108, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas\_libs\hashtable_class_helper.pxi", line 5198, in pandas._libs.hashtable.PyObjectHashTable.get_item
+  File "pandas\_libs\hashtable_class_helper.pxi", line 5206, in pandas._libs.hashtable.PyObjectHashTable.get_item
+KeyError: ('이름', '부대', '런닝', '팬티', '슬리퍼')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Python39\lib\tkinter\__init__.py", line 1892, in __call__
+    return self.func(*args)
+  File "c:\Users\User\Desktop\과학기술병 김도형\supplement_manager\UI.py", line 138, in sizeInfo
+    joined = joined['이름','부대','런닝','팬티','슬리퍼']
+  File "C:\Python39\lib\site-packages\pandas\core\frame.py", line 3455, in __getitem__
+    indexer = self.columns.get_loc(key)
+  File "C:\Python39\lib\site-packages\pandas\core\indexes\base.py", line 3363, in get_loc
+    raise KeyError(key) from err
+KeyError: ('이름', '부대', '런닝', '팬티', '슬리퍼'
