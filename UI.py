@@ -125,11 +125,13 @@ def sizeInfo():
             member = pd.read_excel('member_info.xlsx', sheet_name=sheet)
 
             joined = member.set_index('군번') \
-                           .join(size_info[['군번', '런닝', '팬티', '슬리퍼']].set_index('군번'), on='군번', r_suffix='_new')
+                           .join(size_info[['군번', '런닝', '팬티', '슬리퍼']].set_index('군번'), on='군번', rsuffix='_new')
 
             def is_null(x):
                 return x != x
             for item in ['런닝', '팬티', '슬리퍼']:
+                if not item+'_new' in joined.columns:
+                    continue
                 size = [row[item] if is_null(row[item+'_new']) else row[item+'_new']
                         for row in joined.iloc]
                 joined[item] = size.copy()
