@@ -6,6 +6,7 @@ from tkinter import *
 from tkinter import filedialog
 from openpyxl import load_workbook
 import re
+from pandas.core.frame import DataFrame
 from pandastable import Table
 
 # Tool 창 설정
@@ -30,7 +31,7 @@ resultframe.pack(side="bottom", pady=30, ipady=5)
 dateframe = LabelFrame(dataframe, text="입대 년 월", font="맑은고딕 12")
 dateframe.grid(row=0, column=0, padx=10, pady=5)
 
-years = [str(i) + "년" for i in range(2020, 2030)]
+years = [str(i) + "년" for i in range(2021, 2030)]
 yearbox = ttk.Combobox(dateframe, width=8, height=10, values=years, state="readonly", font="맑은고딕 12")
 yearbox.current(0)    # 0번째 인덱스 값 선택
 yearbox.pack(side="left", padx=3, pady=5)
@@ -67,7 +68,7 @@ def HR_result():
         units = []
         for unit_num in unit_nums:
             unit, num = unit_num[0]
-            units += [unit] * int(num)
+            units += [unit[4:]] * int(num)
 
         df = pd.DataFrame()
         df['군번'] = hr['Unnamed: 26']
@@ -80,7 +81,7 @@ def HR_result():
 
     # 인사 정보 엑셀 시트에 저장
     def save_data(df):
-        year = yearbox.get()
+        year = yearbox.get()[2:]
         month = monthbox.get()
 
         wb = load_workbook('member_info.xlsx')
@@ -166,9 +167,10 @@ def show_itemdata():
     f.pack(fill=BOTH,expand=1)
 
     df = pd.read_excel('member_info.xlsx', sheet_name=None)
-    items = {'런닝': lambda x:int(x[1:]), 
-             '팬티': lambda x:int(x[1:]), 
-             '슬리퍼': lambda x:int(x)}
+    items = {'런닝': lambda x:int(x[1:]),
+             '팬티': lambda x:int(x[1:]),
+             '슬리퍼': lambda x:int(x),
+             '면수건': '계', '양말': '계', '면도기': '계','면도날': '계', '계급장': '계'}
     unit_total = {}
 
     for item in items:
@@ -176,19 +178,22 @@ def show_itemdata():
 
         for month in df.keys():
 
-            if item not in df[month].columns:
+            if items[item] == '계':
+                sum = [(item, '계', len(df[month]))]
+                unit_df = pd.DataFrame(sum, columns = ['품목', '사이즈', month]).convert_dtypes()
+            elif item not in df[month].columns:
                 continue
-
-            unit_df = df[month][item].value_counts(sort=False) \
+            else:
+                unit_df = df[month][item].value_counts(sort=False) \
                                      .convert_dtypes() \
                                      .rename_axis('사이즈') \
                                      .reset_index(name=month)
-            sort_value = unit_df['사이즈'].apply(items[item])
-            label = [item] * len(unit_df)
+                sort_value = unit_df['사이즈'].apply(items[item])
+                label = [item] * len(unit_df)
 
-            unit_df['품목'] = label
-            unit_df['sort'] = sort_value
-            unit_df = unit_df.sort_values(by='sort')
+                unit_df['품목'] = label
+                unit_df['sort'] = sort_value
+                unit_df = unit_df.sort_values(by='sort')
 
             unit_total[item] = pd.merge(unit_total[item], 
                                         unit_df[['품목', '사이즈', month]], 
